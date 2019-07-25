@@ -1517,7 +1517,9 @@ argp_doc (const struct argp *argp, const struct argp_state *state,
       else
         __argp_fmtstream_puts (stream, text);
 
-      if (__argp_fmtstream_point (stream) > __argp_fmtstream_lmargin (stream))
+      if (__argp_fmtstream_point (stream) < 0 ||
+          (size_t)__argp_fmtstream_point (stream)
+          > __argp_fmtstream_lmargin (stream))
         __argp_fmtstream_putc (stream, '\n');
 
       anything = 1;
@@ -1538,7 +1540,8 @@ argp_doc (const struct argp *argp, const struct argp_state *state,
             __argp_fmtstream_putc (stream, '\n');
           __argp_fmtstream_puts (stream, text);
           free ((char *) text);
-          if (__argp_fmtstream_point (stream)
+          if (__argp_fmtstream_point (stream) < 0 ||
+              (size_t)__argp_fmtstream_point (stream)
               > __argp_fmtstream_lmargin (stream))
             __argp_fmtstream_putc (stream, '\n');
           anything = 1;

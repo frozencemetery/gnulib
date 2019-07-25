@@ -174,8 +174,8 @@ extern size_t __argp_fmtstream_set_wmargin (argp_fmtstream_t __fs,
                                             size_t __wmargin);
 
 /* Return the column number of the current output point in __FS.  */
-extern size_t argp_fmtstream_point (argp_fmtstream_t __fs);
-extern size_t __argp_fmtstream_point (argp_fmtstream_t __fs);
+extern ssize_t argp_fmtstream_point (argp_fmtstream_t __fs);
+extern ssize_t __argp_fmtstream_point (argp_fmtstream_t __fs);
 #endif
 
 /* Internal routines.  */
@@ -282,7 +282,7 @@ __argp_fmtstream_set_wmargin (argp_fmtstream_t __fs, size_t __wmargin)
 }
 
 /* Return the column number of the current output point in __FS.  */
-ARGP_FS_EI size_t
+ARGP_FS_EI ssize_t
 __argp_fmtstream_point (argp_fmtstream_t __fs)
 {
   if ((size_t) (__fs->p - __fs->buf) > __fs->point_offs)
