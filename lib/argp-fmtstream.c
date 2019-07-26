@@ -234,7 +234,7 @@ __argp_fmtstream_update (argp_fmtstream_t fs)
       else
 	{
 	  size_t display_width = mbsnwidth (buf, nl - buf, MBSW_STOP_AT_NUL);
-	  if (display_width < (ssize_t) fs->rmargin)
+	  if (display_width < fs->rmargin)
 	    {
 	      /* The buffer contains a full line that fits within the maximum
 		 line width.  Reset point and scan the next line.  */

@@ -300,7 +300,7 @@ re_compile_fastmap_iter (regex_t *bufp, const re_dfastate_t *init_state,
   bool icase = (dfa->mb_cur_max == 1 && (bufp->syntax & RE_ICASE));
   for (node_cnt = 0; node_cnt < init_state->nodes.nelem; ++node_cnt)
     {
-      Idx node = init_state->nodes.elems[node_cnt];
+      size_t node = init_state->nodes.elems[node_cnt];
       re_token_type_t type = dfa->nodes[node].type;
 
       if (type == CHARACTER)
@@ -321,7 +321,7 @@ re_compile_fastmap_iter (regex_t *bufp, const re_dfastate_t *init_state,
 		     && dfa->nodes[node].mb_partial)
 		*p++ = dfa->nodes[node].opr.c;
 	      memset (&state, '\0', sizeof (state));
-	      if (__mbrtowc (&wc, (const char *) buf, p - buf,
+	      if ((ssize_t)__mbrtowc (&wc, (const char *) buf, p - buf,
 			     &state) == p - buf
 		  && (__wcrtomb ((char *) buf, __towlower (wc), &state)
 		      != (size_t) -1))
@@ -582,7 +582,8 @@ static const bitset_t utf8_sb_map =
 static void
 free_dfa_content (re_dfa_t *dfa)
 {
-  Idx i, j;
+  size_t i;
+  Idx j;
 
   if (dfa->nodes)
     for (i = 0; i < dfa->nodes_len; ++i)
@@ -893,7 +894,8 @@ init_dfa (re_dfa_t *dfa, size_t pat_len)
 	dfa->sb_char = (re_bitset_ptr_t) utf8_sb_map;
       else
 	{
-	  int i, j, ch;
+	  int i, j;
+          wint_t ch;
 
 	  dfa->sb_char = (re_bitset_ptr_t) calloc (sizeof (bitset_t), 1);
 	  if (__glibc_unlikely (dfa->sb_char == NULL))
@@ -1082,7 +1084,7 @@ create_initial_state (re_dfa_t *dfa)
 static void
 optimize_utf8 (re_dfa_t *dfa)
 {
-  Idx node;
+  size_t node;
   int i;
   bool mb_chars = false;
   bool has_period = false;
@@ -1177,12 +1179,12 @@ analyze (regex_t *preg)
   dfa->subexp_map = re_malloc (Idx, preg->re_nsub);
   if (dfa->subexp_map != NULL)
     {
-      Idx i;
+      size_t i;
       for (i = 0; i < preg->re_nsub; i++)
 	dfa->subexp_map[i] = i;
       preorder (dfa->str_tree, optimize_subexps, dfa);
       for (i = 0; i < preg->re_nsub; i++)
-	if (dfa->subexp_map[i] != i)
+	if (dfa->subexp_map[i] != (ssize_t)i)
 	  break;
       if (i == preg->re_nsub)
 	{
@@ -1627,7 +1629,7 @@ duplicate_node (re_dfa_t *dfa, Idx org_idx, unsigned int constraint)
 static reg_errcode_t
 calc_inveclosure (re_dfa_t *dfa)
 {
-  Idx src, idx;
+  size_t src, idx;
   bool ok;
   for (idx = 0; idx < dfa->nodes_len; ++idx)
     re_node_set_init_empty (dfa->inveclosures + idx);
@@ -1635,7 +1637,7 @@ calc_inveclosure (re_dfa_t *dfa)
   for (src = 0; src < dfa->nodes_len; ++src)
     {
       Idx *elems = dfa->eclosures[src].elems;
-      for (idx = 0; idx < dfa->eclosures[src].nelem; ++idx)
+      for (idx = 0; (ssize_t)idx < dfa->eclosures[src].nelem; ++idx)
 	{
 	  ok = re_node_set_insert_last (dfa->inveclosures + elems[idx], src);
 	  if (__glibc_unlikely (! ok))
@@ -1651,7 +1653,7 @@ calc_inveclosure (re_dfa_t *dfa)
 static reg_errcode_t
 calc_eclosure (re_dfa_t *dfa)
 {
-  Idx node_idx;
+  size_t node_idx;
   bool incomplete;
 #ifdef DEBUG
   assert (dfa->nodes_len > 0);
@@ -2725,7 +2727,7 @@ build_range_exp (const reg_syntax_t syntax,
 
 # ifdef RE_ENABLE_I18N
   {
-    wchar_t wc;
+    wint_t wc;
     wint_t start_wc;
     wint_t end_wc;
 
@@ -2736,9 +2738,9 @@ build_range_exp (const reg_syntax_t syntax,
 	      : ((end_elem->type == COLL_SYM) ? end_elem->opr.name[0]
 		 : 0));
     start_wc = ((start_elem->type == SB_CHAR || start_elem->type == COLL_SYM)
-		? parse_byte (start_ch, mbcset) : start_elem->opr.wch);
+		? parse_byte (start_ch, mbcset) : (wint_t)start_elem->opr.wch);
     end_wc = ((end_elem->type == SB_CHAR || end_elem->type == COLL_SYM)
-	      ? parse_byte (end_ch, mbcset) : end_elem->opr.wch);
+	      ? parse_byte (end_ch, mbcset) : (wint_t)end_elem->opr.wch);
     if (start_wc == WEOF || end_wc == WEOF)
       return REG_ECOLLATE;
     else if (__glibc_unlikely ((syntax & RE_NO_EMPTY_RANGES)

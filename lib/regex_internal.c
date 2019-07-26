@@ -146,7 +146,7 @@ re_string_realloc_buffers (re_string_t *pstr, Idx new_buf_len)
 
       /* Avoid overflow in realloc.  */
       const size_t max_object_size = MAX (sizeof (wint_t), sizeof (Idx));
-      if (__glibc_unlikely (MIN (IDX_MAX, SIZE_MAX / max_object_size)
+      if (__glibc_unlikely ((ssize_t)MIN (IDX_MAX, SIZE_MAX / max_object_size)
 			    < new_buf_len))
 	return REG_ESPACE;
 
@@ -402,7 +402,7 @@ build_wcs_upper_buffer (re_string_t *pstr)
 		  {
 		    size_t i;
 
-		    if (byte_idx + mbcdlen > pstr->bufs_len)
+		    if ((ssize_t)(byte_idx + mbcdlen) > pstr->bufs_len)
 		      {
 			pstr->cur_state = prev_st;
 			break;
@@ -754,7 +754,7 @@ re_string_reconstruct (re_string_t *pstr, Idx idx, int eflags)
 			  memset (&cur_state, 0, sizeof (cur_state));
 			  mbclen = __mbrtowc (&wc2, (const char *) pp, mlen,
 					      &cur_state);
-			  if (raw + offset - p <= mbclen
+			  if (raw + offset - p <= (ssize_t)mbclen
 			      && mbclen < (size_t) -2)
 			    {
 			      memset (&pstr->cur_state, '\0',

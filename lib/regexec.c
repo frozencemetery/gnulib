@@ -34,7 +34,7 @@ static void sift_ctx_init (re_sift_context_t *sctx, re_dfastate_t **sifted_sts,
 static reg_errcode_t re_search_internal (const regex_t *preg,
 					 const char *string, Idx length,
 					 Idx start, Idx last_start, Idx stop,
-					 size_t nmatch, regmatch_t pmatch[],
+					 ssize_t nmatch, regmatch_t pmatch[],
 					 int eflags);
 static regoff_t re_search_2_stub (struct re_pattern_buffer *bufp,
 				  const char *string1, Idx length1,
@@ -63,7 +63,7 @@ static reg_errcode_t push_fail_stack (struct re_fail_stack_t *fs,
 				      re_node_set *eps_via_nodes);
 static reg_errcode_t set_regs (const regex_t *preg,
 			       const re_match_context_t *mctx,
-			       size_t nmatch, regmatch_t *pmatch,
+			       ssize_t nmatch, regmatch_t *pmatch,
 			       bool fl_backtrack);
 static reg_errcode_t free_fail_stack_return (struct re_fail_stack_t *fs);
 
@@ -483,7 +483,7 @@ re_copy_regs (struct re_registers *regs, regmatch_t *pmatch, Idx nregs,
     { /* Yes.  If we need more elements than were already
 	 allocated, reallocate them.  If we need fewer, just
 	 leave it alone.  */
-      if (__glibc_unlikely (need_regs > regs->num_regs))
+      if (__glibc_unlikely (need_regs > (ssize_t)regs->num_regs))
 	{
 	  regoff_t *new_start = re_realloc (regs->start, regoff_t, need_regs);
 	  regoff_t *new_end;
@@ -504,7 +504,7 @@ re_copy_regs (struct re_registers *regs, regmatch_t *pmatch, Idx nregs,
     {
       assert (regs_allocated == REGS_FIXED);
       /* This function may not be called with REGS_FIXED and nregs too big.  */
-      assert (regs->num_regs >= nregs);
+      assert ((ssize_t)regs->num_regs >= nregs);
       rval = REGS_FIXED;
     }
 
@@ -514,7 +514,7 @@ re_copy_regs (struct re_registers *regs, regmatch_t *pmatch, Idx nregs,
       regs->start[i] = pmatch[i].rm_so;
       regs->end[i] = pmatch[i].rm_eo;
     }
-  for ( ; i < regs->num_regs; ++i)
+  for ( ; i < (ssize_t)regs->num_regs; ++i)
     regs->start[i] = regs->end[i] = -1;
 
   return rval;
@@ -583,7 +583,7 @@ re_exec (const char *s)
 static reg_errcode_t
 __attribute_warn_unused_result__
 re_search_internal (const regex_t *preg, const char *string, Idx length,
-		    Idx start, Idx last_start, Idx stop, size_t nmatch,
+		    Idx start, Idx last_start, Idx stop, ssize_t nmatch,
 		    regmatch_t pmatch[], int eflags)
 {
   reg_errcode_t err;
@@ -612,7 +612,7 @@ re_search_internal (const regex_t *preg, const char *string, Idx length,
   mctx.dfa = dfa;
 #endif
 
-  extra_nmatch = (nmatch > preg->re_nsub) ? nmatch - (preg->re_nsub + 1) : 0;
+  extra_nmatch = (nmatch > (ssize_t)preg->re_nsub) ? nmatch - (preg->re_nsub + 1) : 0;
   nmatch -= extra_nmatch;
 
   /* Check if the DFA haven't been compiled.  */
@@ -663,9 +663,10 @@ re_search_internal (const regex_t *preg, const char *string, Idx length,
   if (nmatch > 1 || dfa->has_mb_node)
     {
       /* Avoid overflow.  */
-      if (__glibc_unlikely ((MIN (IDX_MAX, SIZE_MAX / sizeof (re_dfastate_t *))
-			     <= mctx.input.bufs_len)))
-	{
+      if (__glibc_unlikely ((ssize_t)MIN (IDX_MAX,
+                                          SIZE_MAX / sizeof (re_dfastate_t *))
+			     <= mctx.input.bufs_len))
+        {
 	  err = REG_ESPACE;
 	  goto free_return;
 	}
@@ -937,7 +938,8 @@ prune_impossible_nodes (re_match_context_t *mctx)
   halt_node = mctx->last_node;
 
   /* Avoid overflow.  */
-  if (__glibc_unlikely (MIN (IDX_MAX, SIZE_MAX / sizeof (re_dfastate_t *))
+  if (__glibc_unlikely ((ssize_t)MIN (IDX_MAX,
+                                      SIZE_MAX / sizeof (re_dfastate_t *))
 			<= match_last))
     return REG_ESPACE;
 
@@ -1380,7 +1382,7 @@ pop_fail_stack (struct re_fail_stack_t *fs, Idx *pidx, Idx nregs,
 
 static reg_errcode_t
 __attribute_warn_unused_result__
-set_regs (const regex_t *preg, const re_match_context_t *mctx, size_t nmatch,
+set_regs (const regex_t *preg, const re_match_context_t *mctx, ssize_t nmatch,
 	  regmatch_t *pmatch, bool fl_backtrack)
 {
   const re_dfa_t *dfa = preg->buffer;
@@ -1422,7 +1424,7 @@ set_regs (const regex_t *preg, const re_match_context_t *mctx, size_t nmatch,
     }
   memcpy (prev_idx_match, pmatch, sizeof (regmatch_t) * nmatch);
 
-  for (idx = pmatch[0].rm_so; idx <= pmatch[0].rm_eo ;)
+  for (idx = pmatch[0].rm_so; (ssize_t)idx <= (long)pmatch[0].rm_eo ;)
     {
       update_regs (dfa, pmatch, prev_idx_match, cur_node, idx, nmatch);
 
@@ -2879,7 +2881,8 @@ check_arrival (re_match_context_t *mctx, state_array_t *path, Idx top_node,
       if (__glibc_unlikely (IDX_MAX - old_alloc < incr_alloc))
 	return REG_ESPACE;
       new_alloc = old_alloc + incr_alloc;
-      if (__glibc_unlikely (SIZE_MAX / sizeof (re_dfastate_t *) < new_alloc))
+      if (__glibc_unlikely ((ssize_t)(SIZE_MAX / sizeof (re_dfastate_t *))
+                            < new_alloc))
 	return REG_ESPACE;
       new_array = re_realloc (path->array, re_dfastate_t *, new_alloc);
       if (__glibc_unlikely (new_array == NULL))
@@ -3353,7 +3356,7 @@ build_trtable (const re_dfa_t *dfa, re_dfastate_t *state)
     goto out_free;
 
   /* Avoid arithmetic overflow in size calculation.  */
-  size_t ndests_max
+  ssize_t ndests_max
     = ((SIZE_MAX - (sizeof (re_node_set) + sizeof (bitset_t)) * SBC_MAX)
        / (3 * sizeof (re_dfastate_t *)));
   if (__glibc_unlikely (ndests_max < ndests))
@@ -4066,7 +4069,8 @@ extend_buffers (re_match_context_t *mctx, int min_len)
   re_string_t *pstr = &mctx->input;
 
   /* Avoid overflow.  */
-  if (__glibc_unlikely (MIN (IDX_MAX, SIZE_MAX / sizeof (re_dfastate_t *)) / 2
+  if (__glibc_unlikely ((ssize_t)MIN (IDX_MAX,
+                                      SIZE_MAX / sizeof (re_dfastate_t *)) / 2
 			<= pstr->bufs_len))
     return REG_ESPACE;
 
@@ -4136,7 +4140,7 @@ match_ctx_init (re_match_context_t *mctx, int eflags, Idx n)
       size_t max_object_size =
 	MAX (sizeof (struct re_backref_cache_entry),
 	     sizeof (re_sub_match_top_t *));
-      if (__glibc_unlikely (MIN (IDX_MAX, SIZE_MAX / max_object_size) < n))
+      if (__glibc_unlikely ((ssize_t)MIN (IDX_MAX, SIZE_MAX / max_object_size) < n))
 	return REG_ESPACE;
 
       mctx->bkref_ents = re_malloc (struct re_backref_cache_entry, n);
