@@ -3933,18 +3933,23 @@ func_emit_lib_Makefile_am ()
     cppflags_part1=
   fi
   if $for_test; then
-    cppflags_part2=" -DGNULIB_STRICT_CHECKING=1"
+    cppflags_part2=" \$(HOST_CPPFLAGS) -DGNULIB_STRICT_CHECKING=1 -D_GLIBCXX_ASSERTIONS "
   else
-    cppflags_part2=
+    cppflags_part2=" \$(HOST_CPPFLAGS) -D_GLIBCXX_ASSERTIONS "
+  fi
+  rpm_extra_cflags=
+  if test -f "/usr/lib/rpm/redhat/redhat-hardened-cc1" && test -f "/usr/lib/rpm/redhat/redhat-annobin-cc1"; then
+    rpm_extra_cflags="-specs=/usr/lib/rpm/redhat/redhat-hardened-cc1 -specs=/usr/lib/rpm/redhat/redhat-annobin-cc1"
   fi
   if test -z "$makefile_name"; then
     echo
     echo "AM_CPPFLAGS =$cppflags_part1$cppflags_part2"
-    echo "AM_CFLAGS ="
+    echo "AM_CFLAGS = \$(HOST_CFLAGS) -fexceptions -fstack-protector-strong -fno-strict-aliasing $rpm_extra_cflags -Wp,-D_GLIBCXX_ASSERTIONS -Wp,-DGNULIB_STRICT_CHECKING=1 -W -Wall -Wextra -Wno-undef -Wno-missing-field-initializers -Wno-unused-parameter -Werror -Wno-error=vla -Wno-error=type-limits -Werror=format-security -Werror=trampolines -Wno-error=format-nonliteral -Wno-error=cast-align "
   else
     if test -n "$cppflags_part1$cppflags_part2"; then
       echo
       echo "AM_CPPFLAGS +=$cppflags_part1$cppflags_part2"
+      echo "AM_CFLAGS = \$(HOST_CFLAGS) -fexceptions -fstack-protector-strong -fno-strict-aliasing $rpm_extra_cflags -Wp,-D_GLIBCXX_ASSERTIONS -Wp,-DGNULIB_STRICT_CHECKING=1 -W -Wall -Wextra -Wno-undef -Wno-missing-field-initializers -Wno-unused-parameter -Werror -Wno-error=vla -Wno-error=type-limits -Werror=format-security -Werror=trampolines -Wno-error=format-nonliteral -Wno-error=cast-align "
     fi
   fi
   echo
