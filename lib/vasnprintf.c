@@ -228,8 +228,11 @@
 static size_t
 local_strnlen (const char *string, size_t maxlen)
 {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic warning "-Wstringop-overflow"
   const char *end = memchr (string, '\0', maxlen);
   return end ? (size_t) (end - string) : maxlen;
+#pragma GCC diagnostic pop
 }
 #  endif
 # endif
