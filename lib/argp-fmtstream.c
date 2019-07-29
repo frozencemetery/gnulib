@@ -119,7 +119,7 @@ weak_alias (__argp_fmtstream_free, argp_fmtstream_free)
 
 
 /* Return the pointer to the first character that doesn't fit in l columns.  */
-static inline const ptrdiff_t
+static inline ptrdiff_t
 add_width (const char *ptr, const char *end, size_t l)
 {
   mbstate_t ps;
