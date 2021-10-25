@@ -38,6 +38,14 @@
 /* Get INT_MAX.  */
 #include <limits.h>
 
+#ifndef FALLTHROUGH
+# if __GNUC__ < 7
+#  define FALLTHROUGH ((void) 0)
+# else
+#  define FALLTHROUGH __attribute__ ((__fallthrough__))
+# endif
+#endif
+
 /* Returns the number of columns needed to represent the multibyte
    character string pointed to by STRING.  If a non-printable character
    occurs, and MBSW_REJECT_UNPRINTABLE is specified, -1 is returned.
@@ -90,6 +98,10 @@ mbsnwidth (const char *string, size_t nbytes, int flags)
               p++;
               width++;
               break;
+            case '\0':
+              if (flags & MBSW_STOP_AT_NUL)
+                return width;
+              FALLTHROUGH;
             default:
               /* If we have a multibyte sequence, scan it up to its end.  */
               {
@@ -167,6 +179,9 @@ mbsnwidth (const char *string, size_t nbytes, int flags)
   while (p < plimit)
     {
       unsigned char c = (unsigned char) *p++;
+
+      if (c == 0 && (flags & MBSW_STOP_AT_NUL))
+        return width;
 
       if (isprint (c))
         {

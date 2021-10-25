@@ -45,6 +45,10 @@ extern "C" {
    control characters and 1 otherwise.  */
 #define MBSW_REJECT_UNPRINTABLE 2
 
+/* If this bit is set \0 is treated as the end of string.
+   Otherwise it's treated as a normal one column width character.  */
+#define MBSW_STOP_AT_NUL 4
+
 
 /* Returns the number of screen columns needed for STRING.  */
 #define mbswidth gnu_mbswidth  /* avoid clash with UnixWare 7.1.1 function */

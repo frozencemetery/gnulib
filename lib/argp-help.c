@@ -51,6 +51,7 @@
 #include "argp.h"
 #include "argp-fmtstream.h"
 #include "argp-namefrob.h"
+#include "mbswidth.h"
 
 #ifndef SIZE_MAX
 # define SIZE_MAX ((size_t) -1)
@@ -1433,7 +1434,7 @@ argp_args_usage (const struct argp *argp, const struct argp_state *state,
 
       /* Manually do line wrapping so that it (probably) won't get wrapped at
          any embedded spaces.  */
-      space (stream, 1 + nl - cp);
+      space (stream, 1 + mbsnwidth (cp, nl - cp, MBSW_STOP_AT_NUL));
 
       __argp_fmtstream_write (stream, cp, nl - cp);
     }
