@@ -21,8 +21,14 @@
 /* Get size_t. */
 # include <stddef.h>
 
-/* Get bool. */
-# include <stdbool.h>
+#ifndef GRUB_POSIX_BOOL_DEFINED
+typedef enum { false = 0, true = 1 } bool;
+#define GRUB_POSIX_BOOL_DEFINED 1
+#endif
+
+#ifndef _GL_ATTRIBUTE_CONST
+# define _GL_ATTRIBUTE_CONST /* empty */
+#endif
 
 # ifdef __cplusplus
 extern "C" {
