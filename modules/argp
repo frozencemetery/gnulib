@@ -36,6 +36,7 @@ stdio
 strerror
 memchr
 memmove
+libunistring
 
 configure.ac:
 gl_ARGP
